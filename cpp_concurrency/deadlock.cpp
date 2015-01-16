@@ -25,7 +25,7 @@ void test_deadlock_1(){
 void test_solve_deadlock_1(){
   std::mutex m1, m2;
 
-  std::cout << "Solve deadlock by locking the mtexes always the in the same order...\n";
+  std::cout << "Solve deadlock by locking the mutexes always the same order...\n";
   std::cout << "Stay tuned for avoid_deadlock_with_std_lock to see even a better solution...\n";
 
   bool run{true};
@@ -45,7 +45,7 @@ void test_solve_deadlock_1(){
 void test_deadlock_2(){
   std::mutex m;
 
-  std::cout << "This thread is blocked forever (by mistake someone locks the same xmutex twice on the same thread) ...\n";
+  std::cout << "This thread is blocked forever (by mistake someone locks the same mutex twice on the same thread) ...\n";
 
   std::thread t( [&m](){ std::lock_guard<std::mutex> lk1{m}; std::lock_guard<std::mutex> lk2{m}; } );
   t.join();
@@ -54,7 +54,7 @@ void test_deadlock_2(){
 void test_solve_deadlock_2(){
   std::recursive_mutex m;
 
-  std::cout << "This thread does not block when it locks a mutex twice (because this is a std::recursive_mutex) ...\n";
+  std::cout << "This thread does not block when it locks same mutex twice (because this is a std::recursive_mutex) ...\n";
 
   std::thread t( [&m](){ std::lock_guard<std::recursive_mutex> lk1{m}; std::lock_guard<std::recursive_mutex> lk2{m}; } );
   t.join();
