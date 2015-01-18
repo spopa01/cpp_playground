@@ -1,8 +1,8 @@
-## cpp_playground
+# cpp_playground
 Just a playground... exercising my inner child
 
-# cpp_concurrency (in action):
-
+## cpp_concurrency (in action):
+```C++
 //g++ have_fun.cpp -std=c++11 -lpthread
 
 #include <iostream>
@@ -20,5 +20,4 @@ int main( /*...*/ ){
   std::cout << "Go back to lessons..." << std::endl;
   return 0;
 }
-
-
+```
