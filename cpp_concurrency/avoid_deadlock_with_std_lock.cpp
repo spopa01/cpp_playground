@@ -2,7 +2,7 @@
 #include <thread>
 #include <mutex>
 
-//imagine some huge objects, swap would take long of time...
+//imagine some huge objects, swap would take long time...
 
 struct object{
   object( int data ) : data_{data} {}

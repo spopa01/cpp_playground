@@ -166,7 +166,7 @@ template<typename C> void test1(){
   auto elapsed = stop - start;
   
   std::cout << "test..." << ( cache_error ? "failed" : "passed" ) << "\n";
-  std::cout << "elapsed: " << elapsed.count() << "\n";
+  std::cout << "elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>( elapsed ).count() << "\n";
 }
 
 // coarse lock granularity
@@ -226,36 +226,36 @@ template<typename C> void test2(){
   auto elapsed = stop - start;
   
   std::cout << "test..." << ( cache_error ? "failed" : "passed" ) << "\n";
-  std::cout << "elapsed: " << elapsed.count() << "\n";
+  std::cout << "elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>( elapsed ).count() << "\n";
 }
 
 /* Example of results (on a vm - in milliseconds)
 ****************************** Fine lock granularity
 std::mutex
 test...passed
-elapsed: 461023725
+elapsed: 635
 std::shared_mutex
 test...passed
-elapsed: 498238642
+elapsed: 466
 boost::shared_mutex
 test...passed
-elapsed: 366260535
+elapsed: 572
 spin_lock
 test...passed
-elapsed: 416106890
+elapsed: 527
 ****************************** Coarse lock grnularity
-std::mutex 2
+std::mutex
 test...passed
-elapsed: 351968008
-std::shared_mutex 2
+elapsed: 427
+std::shared_mutex
 test...passed
-elapsed: 187608670
-boost::shared_mutex 2
+elapsed: 221
+boost::shared_mutex
 test...passed
-elapsed: 322266375
-spin_lock 2
+elapsed: 371
+spin_lock
 test...passed
-elapsed: 427798780
+elapsed: 467
 ******************************
 */
 
