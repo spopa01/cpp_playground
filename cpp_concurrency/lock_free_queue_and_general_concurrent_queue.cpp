@@ -39,9 +39,10 @@ xxxxxxxx  owned by the consumer
 xxxxxx++  the node owned by consumer but the "next" pointer inside the node owned by producer
 
 So:
-- the producer owns all nodes before divisor, the next node inside the last node and the ability to update first and last.
+- the producer owns all nodes before divider, the next node inside the last node and the ability to update first and last.
 - the consumer owns everything else, including the values in the nodes from divisior onwards, and the ability to update divisor.
 */
+
 
 template<typename T>
 class lock_free_queue_t{
@@ -104,7 +105,7 @@ Design:
 - the code is using two spinlocks (one for producers and one for consumers)
 - data stored in the nodes is allocated on the heap and the nodes hold only the pointer to it ( it seems that yields better performance )
 - now, the consumers will trim the consumed nodes
-- keep everithing on different cache lines
+- keep everything on different cache lines ( it did not make too much difference on my macbook or ubuntu14_10 vm )
 
 Also:
 - the underlying data-structure rermains linked list
@@ -127,19 +128,24 @@ first                             last
 
 */
 
-#define CACHE_LINE 16
+#define CACHE_LINE_SIZE 16
 
-struct alignas(CACHE_LINE) spin_lock_t{
+struct alignas(CACHE_LINE_SIZE) spin_lock_t{
   std::atomic_flag flag;
+
   spin_lock_t() : flag( ATOMIC_FLAG_INIT ) {}
-  void lock(){ while( flag.test_and_set( std::memory_order_acquire ) ); }
+
+  //spin + yield seems to improve the performance...
+  void lock(){ while( flag.test_and_set( std::memory_order_acquire ) ){ std::this_thread::yield(); }; }
+  //void lock(){ while( flag.test_and_set( std::memory_order_acquire ) ); }
+
   void unlock(){ flag.clear( std::memory_order_release ); }
 };
 
 template<typename T>
 class concurrent_queue_t{
 private:
-  struct alignas(CACHE_LINE) node_t{
+  struct alignas(CACHE_LINE_SIZE) node_t{
     node_t( T* value )
       : value_{value},
         next_{nullptr}
@@ -147,13 +153,19 @@ private:
 
     T* value_;
     std::atomic<node_t*> next_;
+    char pad[CACHE_LINE_SIZE - sizeof(T*) - sizeof(std::atomic<node_t*>)];
   };
-
-  node_t *first_;
-  node_t *last_;
-
+  
+  //because we force the alignment we only need padding at the end...
+  //char pad0[CACHE_LINE_SIZE];
+  alignas(CACHE_LINE_SIZE) node_t *first_;
+  //char pad1[CACHE_LINE_SIZE - sizeof(node_t*)];
+  alignas(CACHE_LINE_SIZE) node_t *last_;
+  //char pad2[CACHE_LINE_SIZE - sizeof(node_t*)];
   spin_lock_t producer_lock_;
+  //char pad3[CACHE_LINE_SIZE - sizeof(spin_lock_t)];
   spin_lock_t consumer_lock_;
+  char pad[CACHE_LINE_SIZE - sizeof(spin_lock_t)];
 
 public:
   concurrent_queue_t(){
@@ -201,7 +213,8 @@ public:
 
 //---------------------------------------------------------------------------------------------------------------------------
 
-#define SAMPLES 20000000
+#define SAMPLES 1000000
+#define SPLITS 4
 
 void test_lock_free_queue(){
   lock_free_queue_t<int> qu;
@@ -239,19 +252,52 @@ void test_concurrent_queue_1(){
   std::cout << "elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>( elapsed ).count() << "\n";
 }
 
+#include <algorithm>
 void test_concurrent_queue_2(){
   concurrent_queue_t<int> qu;
-  
-  bool err {false};
 
-  std::cout << "test..." << ( err ? "failed" : "passed" ) << "\n";
+  std::vector<int> v1( SAMPLES ), v2( SAMPLES, 0 );
+  std::generate( v1.begin(), v1.end(), [](){ static int i=0; return i++; } );
+
+  auto start = std::chrono::high_resolution_clock::now();
+  std::atomic<int> idx{0};
+  std::vector<std::thread> pool;
+  for( int id=0; id<SPLITS; ++id ){
+    pool.emplace_back( std::thread( [id, &v1, &qu](){ for( int i=0; i<SAMPLES/SPLITS; ++i ){ qu.push( v1[ id*SAMPLES/SPLITS + i ] ); } } ) );
+    pool.emplace_back( std::thread( [id, &idx, &v2, &qu](){ int v; while(idx < SAMPLES){ if(qu.pop(v)){ v2[idx++] = v; } } } ) );
+  }
+
+  for( auto& th : pool ) th.join();
+  
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto elapsed = stop - start;
+
+  std::sort( v2.begin(), v2.end() );
+
+  std::cout << "test..." << ( v1 != v2 ? "failed" : "passed" ) << "\n";
+  std::cout << "elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>( elapsed ).count() << "\n";
 }
 
 //---------------------------------------------------------------------------------------------------------------------------
 
+//Compile: g++ file_name.cpp -std=c++11 -lpthread -O4
+
+/*
+
+Example (time in milliseconds):
+
+test...passed
+elapsed: 122
+test...passed
+elapsed: 404
+test...passed
+elapsed: 302
+
+*/
+
 int main( /**/ ){
   test_lock_free_queue();
   test_concurrent_queue_1();
-  //test_concurrent_queue_2();
+  test_concurrent_queue_2();
   return 0;
 }
