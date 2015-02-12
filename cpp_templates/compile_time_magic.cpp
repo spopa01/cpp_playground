@@ -11,8 +11,8 @@
 
 struct state{
   void begin(){ depth = 0; }
-  void open() { depth++; };
-  void close() { depth--; };
+  void open(){ depth++; }
+  void close(){ depth--; }
   auto end(){ return depth; }
 
 private:
@@ -43,7 +43,7 @@ private:
 
 //This is the starting point
 struct fluent_syntax{ 
-  auto begin() { return fluent_syntax_impl<0>{s_}; }
+  auto begin() { s_.begin(); return fluent_syntax_impl<0>{s_}; }
 private:
   state s_;
 };
