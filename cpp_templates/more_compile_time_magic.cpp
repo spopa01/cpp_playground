@@ -35,8 +35,11 @@ private:
 //Supported operations are:
 //  begin
 //  end
-//  open
-//  close
+//  begin_object
+//  end_object
+//  begin_array
+//  end_array
+//  add_entry
 
 #define xobj 0
 #define xarr 1
@@ -106,7 +109,15 @@ int main(){
         .begin_array( "says" )
           .add_entry( "hello" )
           .add_entry( "world..." )
+          .begin_array()
+            .add_entry( "pam..." )
+            .add_entry( "pam..." )
+          .end_array()
         .end_array()
+        .begin_object("description")
+          .add_entry("mind", "funny")
+          .add_entry("body", "unknown")
+        .end_object()
       .end_object()
     .end();
   
