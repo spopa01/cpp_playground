@@ -7,10 +7,11 @@ Just a playground... exercising my inner child
 
 #include <iostream>
 #include <thread>
+#include <atomic>
 #include <chrono>
 
 int main( /*...*/ ){
-  bool pause = true;
+  std::atomic<bool> pause {true};
   //children are playing...
   std::thread child([&pause](){ while( pause ){ std::cout << "Have fun..." << std::endl; } });
   //so the parents can sleep...
