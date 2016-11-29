@@ -2,7 +2,7 @@
 #include <string>
 #include <sstream>
 
-//Compile: g++ compile_time_magic.cpp -std=c++14
+//Compile: g++ more_compile_time_magic.cpp -std=c++14
 
 using key = std::string;
 using val = std::string;
@@ -120,6 +120,9 @@ int main(){
         .end_object()
       .end_object()
     .end();
-  
+/*
+Generates well formatted... JSON like output
+{  earthling: {  first_name: stefan , sure_name: popa , says: [  hello , world... ,  [  pam... , pam...  ]  ] , description: {  mind: funny , body: unknown  }  }  }
+*/
   return 0;
 }
